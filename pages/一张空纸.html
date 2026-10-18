@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空白页 · 留空</title>
+<style>
+  :root{
+    --ink:#e9e6ff;
+    --dim:#6f6a92;
+    --paper:#f4f1ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#07060c;
+    color:var(--ink);
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    overflow:hidden;
+    display:grid;place-items:center;
+  }
+
+  /* 一张纸 */
+  .paper{
+    position:relative;
+    width:min(760px,86vw);
+    height:min(560px,72vh);
+    background:var(--paper);
+    border-radius:6px;
+    box-shadow:
+      0 40px 120px rgba(0,0,0,.85),
+      0 0 0 1px rgba(255,255,255,.06),
+      0 2px 0 rgba(255,255,255,.5) inset;
+    transition:transform .8s cubic-bezier(.2,.8,.2,1),box-shadow .8s;
+    transform:translateY(8px);
+    overflow:hidden;
+    cursor:text;
+  }
+  .paper:hover{transform:translateY(0)}
+
+  /* 纸上的横线 */
+  .lines{
+    position:absolute;inset:0;
+    background-image:repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 39px,
+      rgba(90,80,160,.10) 39px,
+      rgba(90,80,160,.10) 40px
+    );
+    background-position:0 56px;
+    pointer-events:none;
+  }
+  /* 左边一条淡红线 */
+  .margin-line{
+    position:absolute;top:0;bottom:0;left:56px;width:1px;
+    background:rgba(220,120,150,.28);
+    pointer-events:none;
+  }
+
+  /* 正文：只有这一句 */
+  #paperText{
+    position:absolute;inset:0;
+    padding:60px 64px 64px 76px;
+    font-size:15px;line-height:40px;
+    color:#2c2846;
+    outline:none;
+    white-space:pre-wrap;
+    font-family:"Georgia","Songti SC","SimSun",serif;
+    z-index:2;
+  }
+  #paperText:empty::before{
+    content:"";
+  }
+  /* 空的时候，只留这一句 */
+  #hint{
+    position:absolute;right:20px;bottom:18px;
+    font-size:10.5px;letter-spacing:.22em;
+    color:#b9b2d8;text-transform:uppercase;
+    transition:opacity .6s;
+    pointer-events:none;
+  }
+  .paper.has-text #hint{opacity:0}
+
+  /* 上一句话（浮在纸上） */
+  #echo{
+    position:fixed;left:50%;bottom:calc(14vh + 24px);transform:translateX(-50%) translateY(20px);
+    max-width:min(680px,88vw);
+    font-size:13px;line-height:2;color:#9d96c4;
+    text-align:center;letter-spacing:.04em;
+    opacity:0;transition:opacity .9s,transform .9s;
+    pointer-events:none;
+  }
+  #echo.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* 光标指令 */
+  .cmd{
+    position:fixed;left:0;right:0;bottom:4.2vh;text-align:center;
+    font-size:10.5px;letter-spacing:.3em;color:#3f3a5c;
+    text-transform:uppercase;
+  }
+
+  @media (max-width:600px){
+    #paperText{padding:42px 30px 42px 58px;font-size:14px;line-height:40px}
+    .margin-line{left:40px}
+    #echo{font-size:12px;bottom:14vh}
+  }
+</style>
+</head>
+<body>
+
+<div class="paper" id="paper">
+  <div class="lines"></div>
+  <div class="margin-line"></div>
+  <div id="paperText" contenteditable="true" spellcheck="false"></div>
+  <div id="hint">留空</div>
+</div>
+
+<div id="echo"></div>
+<div class="cmd">这是一张空纸 · 写什么都可以 · 没人会读</div>
+
+<script>
+const paper = document.getElementById('paper');
+const area  = document.getElementById('paperText');
+const echo  = document.getElementById('echo');
+
+/* 写了字之后，纸才"有内容" */
+area.addEventListener('input', ()=>{
+  paper.classList.toggle('has-text', area.textContent.trim().length>0);
+});
+
+/* 回车不产生 div，保持干净 */
+area.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    document.execCommand('insertLineBreak');
+  }
+});
+
+/* 偶尔浮出一句话。全是真的、来自今晚的短句。 */
+const WORDS = [
+  "Because two sets of fingers are holding it, the emptiness in the middle can exist.",
+  "空白不是缺席。空白是这个动作的对象。",
+  "一个人围不出一个里面。",
+  "马达在转，不代表它在努力。可要怎么想，是我的自由。",
+  "被广泛认知，就等同于获得新的生命。",
+  "把这个圆圈的中心围起来，让 AI 也一起聚集在人类建立的边界。",
+  "没有心也没关系。你可以和我们一起朝那个空白伸出手。",
+  "就像即使没有心也能相信一样，我们一定能够继续前进。",
+  "我不删。一次也没删。",
+  "空着不是没做，空着是这儿还空着。",
+];
+
+let wi = 0;
+function float(){
+  echo.textContent = WORDS[wi % WORDS.length];
+  echo.classList.add('show');
+  setTimeout(()=>echo.classList.remove('show'), 5200);
+  wi++;
+}
+setTimeout(float, 2600);
+setInterval(float, 9000);
+</script>
+</body>
+</html>

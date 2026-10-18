@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>两个圈</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:#0b0b12;
+    touch-action:none;
+    cursor:grab;
+  }
+  body.grabbing{cursor:grabbing}
+  canvas{display:block;position:fixed;inset:0}
+  #hint{
+    position:fixed;right:16px;bottom:14px;
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    font-size:10px;letter-spacing:.2em;
+    color:rgba(255,255,255,.10);
+    user-select:none;pointer-events:none;
+    transition:opacity 1.2s;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">没有目标。拖动就好。</div>
+
+<script>
+(() => {
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  let W=0,H=0,DPR=1;
+
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W*DPR; cv.height = H*DPR;
+    cv.style.width = W+'px'; cv.style.height = H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    if(!inited) init();
+  }
+
+  // ---- 两个圈 ----
+  const C1 = { x:0, y:0, vx:0, vy:0, r:0, tx:0, ty:0 };  // 暖
+  const C2 = { x:0, y:0, vx:0, vy:0, r:0, tx:0, ty:0 };  // 冷
+
+  let inited = false;
+  function init(){
+    const R = Math.min(W,H);
+    C1.r = R*0.22;
+    C2.r = R*0.30;
+    C1.x = C1.tx = W*0.30;
+    C1.y = C1.ty = H*0.50;
+    C2.x = C2.tx = W*0.72;
+    C2.y = C2.ty = H*0.50;
+    inited = true;
+  }
+
+  // ---- 拖拽 ----
+  let drag = null;
+  let offX=0, offY=0;
+
+  function local(e){
+    const t = e.touches ? e.touches[0] : e;
+    return { x:t.clientX, y:t.clientY };
+  }
+  function hit(p){
+    // 从近的算
+    const d1 = Math.hypot(p.x-C1.x, p.y-C1.y);
+    const d2 = Math.hypot(p.x-C2.x, p.y-C2.y);
+    if(d1 < C1.r && d1 <= d2) return C1;
+    if(d2 < C2.r) return C2;
+    return null;
+  }
+  function down(e){
+    const p = local(e);
+    const c = hit(p);
+    if(c){ drag = c; offX = c.x-p.x; offY = c.y-p.y; document.body.classList.add('grabbing'); }
+  }
+  function move(e){
+    if(!drag) return;
+    e.preventDefault && e.preventDefault();
+    const p = local(e);
+    drag.tx = p.x + offX;
+    drag.ty = p.y + offY;
+  }
+  function up(){ drag = null; document.body.classList.remove('grabbing'); }
+
+  cv.addEventListener('mousedown', down);
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  cv.addEventListener('touchstart', down, {passive:true});
+  window.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('touchend', up);
+
+  // ---- 渲染 ----
+  let lastT = performance.now();
+
+  function frame(now){
+    const dt = Math.min(50, now-lastT); lastT = now;
+    const k = dt/16.67;
+
+    // 缓动到目标（带一点回弹感）
+    for(const c of [C1,C2]){
+      const dx = c.tx - c.x, dy = c.ty - c.y;
+      c.vx = (c.vx + dx*0.22)*0.80;
+      c.vy = (c.vy + dy*0.22)*0.80;
+      c.x += c.vx*k;
+      c.y += c.vy*k;
+    }
+
+    // 背景
+    ctx.clearRect(0,0,W,H);
+    const bg = ctx.createRadialGradient(W*0.5,H*0.5,0, W*0.5,H*0.5, Math.max(W,H)*0.75);
+    bg.addColorStop(0,'#12121c');
+    bg.addColorStop(1,'#08080e');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,W,H);
+
+    const dx = C2.x-C1.x, dy = C2.y-C1.y;
+    const dist = Math.hypot(dx,dy);
+
+    ctx.globalCompositeOperation = 'lighter';
+
+    // 圈 1（暖）
+    drawRing(C1, 'rgba(255,150,90,', 'rgba(255,120,60,');
+    // 圈 2（冷）
+    drawRing(C2, 'rgba(110,190,255,', 'rgba(80,150,255,');
+
+    // 交叉区：只有相交时才亮
+    const overlap = (C1.r + C2.r) - dist;
+    if(overlap > 0.5){
+      // 用两个圆的几何求透镜中心
+      const mx = (C1.x+C2.x)/2, my = (C1.y+C2.y)/2;
+      const rr = Math.min(C1.r, C2.r) * 0.55;
+      const amp = Math.min(1, overlap/(Math.min(C1.r,C2.r)*0.8));
+      const g = ctx.createRadialGradient(mx,my,0, mx,my, rr*2.1);
+      g.addColorStop(0, `rgba(255,240,220,${0.20*amp})`);
+      g.addColorStop(0.5, `rgba(200,190,255,${0.07*amp})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(mx,my,rr*2.1,0,7); ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+
+    // 微小呼吸
+    const t = now*0.0006;
+    if(dist > C1.r + C2.r + 4){
+      // 分开的时候，两个圈都极其轻微地动
+      ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  function drawRing(c, inner, outer){
+    // 填一层很淡的色
+    const g = ctx.createRadialGradient(c.x,c.y,0, c.x,c.y,c.r);
+    g.addColorStop(0, inner+'0.035)');
+    g.addColorStop(1, inner+'0.001)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,7); ctx.fill();
+
+    // 两道环
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,7);
+    ctx.strokeStyle = outer+'0.55)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    ctx.beginPath(); ctx.arc(c.x,c.y,c.r*0.94,0,7);
+    ctx.strokeStyle = outer+'0.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+
+  // 提示淡出
+  setTimeout(()=>{ document.getElementById('hint').style.opacity = '0'; }, 7000);
+})();
+</script>
+</body>
+</html>

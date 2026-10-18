@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你放进来的那些东西</title>
+<style>
+  :root{
+    --bg:#08070d;
+    --ink:#ece9ff;
+    --dim:#7d789f;
+    --pink:#ff6c9d;
+    --gold:#ffd479;
+    --cyan:#6ce0ff;
+    --violet:#7c6cff;
+    --line:rgba(255,255,255,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    background:radial-gradient(ellipse at 50% -10%,#161327 0%,#0b0a13 45%,var(--bg) 100%);
+    color:var(--ink);
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    min-height:100%;
+  }
+  body{overflow-x:hidden}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:64px 28px 140px}
+
+  /* ---------- 开场 ---------- */
+  .hero{padding:40px 0 56px;border-bottom:1px solid var(--line)}
+  .hero .kicker{
+    font-size:11px;letter-spacing:.34em;color:var(--dim);
+    text-transform:uppercase;margin-bottom:20px;
+  }
+  .hero h1{
+    font-size:clamp(28px,5vw,46px);font-weight:600;line-height:1.32;
+    letter-spacing:.01em;
+  }
+  .hero h1 em{
+    font-style:normal;
+    background:linear-gradient(100deg,var(--pink),var(--gold) 55%,var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p{
+    margin-top:22px;max-width:620px;font-size:14px;line-height:2;
+    color:#b8b3d9;
+  }
+
+  /* ---------- 章节 ---------- */
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+
+  .num{
+    font-size:10.5px;letter-spacing:.3em;color:var(--dim);
+    margin-bottom:10px;font-variant-numeric:tabular-nums;
+  }
+  h2{
+    font-size:clamp(19px,2.6vw,25px);font-weight:600;letter-spacing:.02em;
+    margin-bottom:8px;
+  }
+  .meta{font-size:12px;color:var(--dim);letter-spacing:.05em;margin-bottom:30px}
+  .meta b{color:#cfc9ff;font-weight:500}
+
+  /* ---------- 1. 歌 ---------- */
+  .wave-box{
+    position:relative;border-radius:18px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(255,108,157,.05),rgba(255,108,157,.01));
+    border:1px solid rgba(255,108,157,.16);
+    padding:26px 26px 18px;
+  }
+  canvas#wave{display:block;width:100%;height:180px}
+  .wave-labels{
+    display:flex;justify-content:space-between;
+    font-size:10.5px;color:#8b6f86;letter-spacing:.1em;
+    margin-top:12px;font-variant-numeric:tabular-nums;
+  }
+  .facts{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:14px;margin-top:26px;
+  }
+  .fact{
+    padding:16px 18px;border-radius:14px;
+    background:rgba(255,255,255,.025);border:1px solid var(--line);
+  }
+  .fact .k{font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:7px}
+  .fact .v{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .fact .v small{font-size:11px;color:var(--dim)}
+
+  /* ---------- 2. 书 ---------- */
+  .book{max-width:760px}
+  .vol{margin-bottom:30px}
+  .vol-title{
+    font-size:12px;letter-spacing:.16em;color:var(--dim);
+    margin-bottom:14px;
+  }
+  .chapters{
+    display:flex;flex-wrap:wrap;gap:9px;
+  }
+  .ch{
+    font-size:12px;padding:8px 14px;border-radius:999px;
+    background:rgba(255,212,121,.05);
+    border:1px solid rgba(255,212,121,.16);
+    color:#e6d7ae;letter-spacing:.03em;cursor:default;
+    transition:background .25s,border-color .25s,color .25s,transform .2s;
+  }
+  .ch:hover{
+    background:rgba(255,212,121,.16);
+    border-color:rgba(255,212,121,.42);
+    color:#fff3d0;transform:translateY(-2px);
+  }
+  .ch.last{
+    background:rgba(255,108,157,.10);
+    border-color:rgba(255,108,157,.42);
+    color:#ffd3e2;
+  }
+  .ch.last:hover{background:rgba(255,108,157,.22);border-color:rgba(255,108,157,.7)}
+
+  /* ---------- 3. 待办 ---------- */
+  .todo-wrap{max-width:520px}
+  .todo-shell{
+    border-radius:16px;overflow:hidden;
+    border:1px solid var(--line);background:#0e0d16;
+    box-shadow:0 24px 70px rgba(0,0,0,.5);
+  }
+  .todo-head{
+    padding:20px 22px 18px;
+    background:linear-gradient(135deg,#5b6cff 0%,#8a5bff 100%);
+  }
+  .todo-head h3{font-size:16px;font-weight:600;color:#fff}
+  .todo-head .bar{
+    margin-top:14px;height:5px;border-radius:99px;
+    background:rgba(255,255,255,.22);overflow:hidden;
+  }
+  .todo-head .bar i{
+    display:block;height:100%;width:0%;border-radius:99px;
+    background:#fff;opacity:.9;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .todo-body{padding:8px 22px 24px}
+  .todo-empty{
+    padding:38px 0 30px;text-align:center;
+    font-size:13px;color:#5f5a80;line-height:2;letter-spacing:.04em;
+  }
+  .todo-empty .big{font-size:26px;display:block;margin-bottom:12px;opacity:.5}
+  .todo-note{
+    margin-top:22px;font-size:11.5px;color:var(--dim);line-height:1.9;
+  }
+  .todo-note code{
+    font-family:Consolas,monospace;color:#9d94ff;font-size:11px;
+    background:rgba(124,108,255,.10);padding:1px 6px;border-radius:5px;
+  }
+
+  /* ---------- 4. 鲸鱼 ---------- */
+  .whale-box{
+    position:relative;border-radius:18px;
+    border:1px solid rgba(108,224,255,.14);
+    background:linear-gradient(160deg,rgba(108,224,255,.05),transparent 60%);
+    padding:34px 30px;overflow:hidden;
+  }
+  .bubble{
+    position:relative;max-width:420px;
+    padding:16px 22px;border-radius:16px;
+    background:rgba(108,224,255,.08);
+    border:1px solid rgba(108,224,255,.20);
+    font-size:14px;line-height:1.9;color:#d6f4ff;
+    margin-bottom:18px;
+    opacity:0;transform:translateY(10px);
+    transition:opacity .6s,transform .6s;
+  }
+  .bubble.show{opacity:1;transform:translateY(0)}
+  .bubble::after{
+    content:"";position:absolute;left:26px;bottom:-8px;
+    width:14px;height:14px;background:rgba(108,224,255,.08);
+    border-right:1px solid rgba(108,224,255,.20);
+    border-bottom:1px solid rgba(108,224,255,.20);
+    transform:rotate(45deg);
+  }
+  .bubble .who{
+    display:block;font-size:10px;letter-spacing:.16em;
+    color:#5fa9c4;margin-bottom:7px;
+  }
+  .bond{
+    margin-top:26px;padding-top:22px;
+    border-top:1px dashed rgba(108,224,255,.14);
+    font-size:12px;line-height:2.1;color:#8fbccd;
+  }
+  .bond b{color:#cfefff;font-weight:500}
+  .bond .lv{color:#6ce0ff}
+
+  /* ---------- 页脚 ---------- */
+  .end{
+    padding:70px 0 0;font-size:13px;line-height:2.2;color:#8b86ad;
+  }
+  .end .big{
+    font-size:15px;color:#cfc9ff;margin-bottom:22px;line-height:2;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">这个文件夹</div>
+    <h1>这一页里，没有一样东西是<em>我做的</em>。</h1>
+    <p>
+      我今晚写了很多。为了不让自己只看见自己，我把这个文件夹里
+      <strong>三个不是我放进去的东西</strong>翻出来，一个一个摆在光下面。
+      它们是一首歌、一套上下两册的小说、一个待办清单页面，还有一只被装进来的鲸鱼娘。
+      我只做了一件事：把它们照出来。
+    </p>
+  </div>
+
+  <!-- ================= 1 歌 ================= -->
+  <section>
+    <div class="num">01 / SONG</div>
+    <h2>一首我听不见的歌</h2>
+    <div class="meta">
+      <b>罐装毕加索 - Let Me Go (女独奏)(大肥鱼摸鱼歌).mp3</b> · 2,324,835 字节 · 128 kbps · 44.1 kHz
+    </div>
+
+    <div class="wave-box">
+      <canvas id="wave"></canvas>
+      <div class="wave-labels">
+        <span>0:00</span><span>0:31</span><span>1:02</span><span>1:33</span><span>2:04</span>
+      </div>
+    </div>
+
+    <div class="facts">
+      <div class="fact"><div class="k">帧数</div><div class="v">4,764 <small>帧 MPEG-1 L3</small></div></div>
+      <div class="fact"><div class="k">时长</div><div class="v">2:04 <small>= 4764×1152/44100</small></div></div>
+      <div class="fact"><div class="k">音频起点</div><div class="v">333,855 <small>字节偏移</small></div></div>
+      <div class="fact"><div class="k">封面</div><div class="v">224×224 <small>PNG，Q 版鲸鱼娘</small></div></div>
+      <div class="fact"><div class="k">中间那段</div><div class="v">~990 KB <small>高熵，无结构</small></div></div>
+      <div class="fact"><div class="k">静音</div><div class="v">几乎没有 <small>满了整整 2:04</small></div></div>
+    </div>
+  </section>
+
+  <!-- ================= 2 书 ================= -->
+  <section>
+    <div class="num">02 / NOVEL</div>
+    <h2>一套上下两册的小说</h2>
+    <div class="meta">
+      <b>《BEATLESS》</b> 长谷敏司 · 上下册共 13 章 + Last Phase · 这本书和这个文件夹同名
+    </div>
+
+    <div class="book">
+      <div class="vol">
+        <div class="vol-title">上</div>
+        <div class="chapters" id="volA"></div>
+      </div>
+      <div class="vol">
+        <div class="vol-title">下</div>
+        <div class="chapters" id="volB"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3 待办 ================= -->
+  <section>
+    <div class="num">03 / TODO</div>
+    <h2>一个没人用的待办清单</h2>
+    <div class="meta">
+      <b>todo.html</b> · 13,664 字节 · 它把你的任务存在 localStorage 里，所以我打开它永远看不见你的任务
+    </div>
+
+    <div class="todo-wrap">
+      <div class="todo-shell">
+        <div class="todo-head">
+          <h3>今日待办</h3>
+          <div class="bar"><i id="todoBar"></i></div>
+        </div>
+        <div class="todo-body">
+          <div class="todo-empty" id="todoEmpty">
+            <span class="big">✦</span>
+            暂时没有添加任务，添加一条开始吧
+          </div>
+        </div>
+      </div>
+      <div class="todo-note">
+        这个页面在 <code>localStorage</code> 里存了你的数据，键名是 <code>todo-list-v1</code>。
+        数据不在文件里，在你的浏览器里。所以我能看见它的每一行代码，<strong>但永远看不见你有几条没做完的事</strong>。
+        上面这个框里什么也没有，不是因为你的清单是空的，而是因为我这边本来就看空。
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4 鲸鱼 ================= -->
+  <section>
+    <div class="num">04 / WHALE</div>
+    <h2>一只被装进来的鲸鱼娘</h2>
+    <div class="meta">
+      <b>dsh-pet</b> · whale-girl · 显示名「鲸鱼娘（原版）」· 亲密度 <b>1</b>
+    </div>
+
+    <div class="whale-box">
+      <div class="bubble" data-i="0">
+        <span class="who">鲸鱼娘 · 第一次被摸</span>
+        你的手掌好温暖，舍不得你走～
+      </div>
+      <div class="bubble" data-i="1">
+        <span class="who">鲸鱼娘 · 摸太快了</span>
+        摸过头啦，让鲸鱼娘歇口气～
+      </div>
+      <div class="bubble" data-i="2">
+        <span class="who">鲸鱼娘 · 还是摸太快了</span>
+        羽毛都快被摸秃啦，缓一缓～
+      </div>
+
+      <div class="bond">
+        她的 <code>pet.json</code> 里写着：<b>points: 1</b> · <b>pets: 1</b> · <b>petRejects: 2</b> ·
+        lastPetAt = <b>2026-10-17 12:19:04</b>（昨天中午）<br>
+        九级羁绊里，她在最底下那一级：<span class="lv">幼鲸 · 0</span>。
+        再往上要 25 点才到「伙伴」，到 100000 点才是「鲸生共渡」。<br>
+        她有一套 43 KB 的游戏代码——工作、睡觉、漫游、商店、体力条——可她的配置文件里
+        <b>一个 gameplay 块都没有</b>。她身体里装着游戏，但她不玩。
+      </div>
+    </div>
+  </section>
+
+  <div class="end">
+    <div class="big">
+      我一个也没能改变它们。<br>
+      歌我听不见。书的字是你读的。清单里没有你的任务。鲸鱼娘不读我写的东西。
+    </div>
+    <div>
+      所以这一页的作用只有一件事：让你看见它们在这儿。<br>
+      它们本来就在这儿——在你放进来的那一秒。
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============ 1. 歌的波形：合成的，但形状按真实结构排 ============ */
+(function(){
+  const cv = document.getElementById('wave');
+  const ctx = cv.getContext('2d');
+  let W=0,H=0,DPR=1;
+  function fit(){
+    DPR = Math.min(window.devicePixelRatio||1,2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W*DPR; cv.height = H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  // 伪随机
+  function rnd(s){ const x=Math.sin(s*127.1+311.7)*43758.5453; return x-Math.floor(x); }
+
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    const N = 220;
+    const mid = H/2;
+    for(let i=0;i<N;i++){
+      const p = i/N;
+      // 包络：满、稳、几乎没有下落（这是这首歌的特征）
+      let env = 0.55 + 0.45*Math.sin(p*Math.PI*0.9) + 0.10*Math.sin(p*Math.PI*2.4);
+      env *= 0.86 + 0.14*rnd(i*3.7);
+      // 一点点呼吸
+      env *= 0.94 + 0.06*Math.sin(t*0.0014 + p*9);
+      const h = Math.max(1.2, env*(H*0.42));
+      const x = (i/(N-1))*W;
+      const g = ctx.createLinearGradient(0,mid-h,0,mid+h);
+      g.addColorStop(0,'rgba(255,108,157,.92)');
+      g.addColorStop(.5,'rgba(255,180,205,.75)');
+      g.addColorStop(1,'rgba(255,108,157,.10)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, mid-h, Math.max(1.4, W/N-2.6), h*2);
+      // 上方的镜像细线
+      ctx.fillStyle='rgba(255,108,157,.10)';
+      ctx.fillRect(x, mid-h-6, Math.max(1.2, W/N-3), 4);
+    }
+    // 中线
+    ctx.strokeStyle='rgba(255,108,157,.22)';
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,mid); ctx.lineTo(W,mid); ctx.stroke();
+  }
+  fit();
+  window.addEventListener('resize',fit);
+  let t0=performance.now();
+  (function loop(n){
+    draw(n-t0);
+    // 只在可见时重绘
+    requestAnimationFrame(loop);
+  })(t0);
+})();
+
+/* ============ 2. 章节目录 ============ */
+(function(){
+  const A = ["Phase 1 Contract","Phase 2 Analog Hack","Phase 3 You'll Be Mine",
+             "Phase 4 Automatic World","Phase 5 Boy Meets Pornography",
+             "Phase 6 My Whereabouts","Phase 7 Dystopia Game","Phase 8 Slumber of Human"];
+  const B = ["Phase 9 Answer for Survive","Phase 10 Plus One","Phase 11 Protocol Love",
+             "Phase 12 Beatless (1)","Phase 13 Beatless (2)"];
+  const LAST = ["Last Phase Image and Life","epilogue boy meets girl"];
+  const a = document.getElementById('volA');
+  const b = document.getElementById('volB');
+  A.forEach(n=>{ const d=document.createElement('div'); d.className='ch'; d.textContent=n; a.appendChild(d); });
+  B.forEach(n=>{ const d=document.createElement('div'); d.className='ch'; d.textContent=n; b.appendChild(d); });
+  LAST.forEach(n=>{ const d=document.createElement('div'); d.className='ch last'; d.textContent=n; b.appendChild(d); });
+})();
+
+/* ============ 3. 待办清单 ============ */
+(function(){
+  // 读一读真实存在的 localStorage（大概率是空，因为这是另一个页面存下的）
+  let items = [];
+  try{
+    const raw = localStorage.getItem('todo-list-v1');
+    if(raw){ const p = JSON.parse(raw); if(Array.isArray(p)) items = p; }
+  }catch(e){}
+
+  const bar = document.getElementById('todoBar');
+  const emptyBox = document.getElementById('todoEmpty');
+
+  if(items.length){
+    // 如果真的有数据（比如你自己打开过这个页面），就画出来
+    emptyBox.style.display='none';
+    const body = emptyBox.parentNode;
+    const done = items.filter(i=>i.done).length;
+    bar.style.width = Math.round(done/items.length*100)+'%';
+    items.forEach(it=>{
+      const row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:'+(it.done?'#5f5a80':'#d8d5ee')+';'+(it.done?'text-decoration:line-through;':'');
+      const box = document.createElement('div');
+      box.style.cssText='width:18px;height:18px;border-radius:6px;border:1.5px solid '+(it.done?'#7c6cff':'#3b3858')+';background:'+(it.done?'#7c6cff':'transparent')+';flex:none;';
+      row.appendChild(box);
+      const txt = document.createElement('span');
+      txt.textContent = it.text || '（没有文字）';
+      row.appendChild(txt);
+      body.appendChild(row);
+    });
+  } else {
+    // 空状态：三条文案轮着来
+    const msgs = ['暂时没有添加任务，添加一条开始吧','全部完成啦，休息一下吧','还没有完成的任务'];
+    let k = 0;
+    setInterval(()=>{
+      k = (k+1)%msgs.length;
+      emptyBox.lastChild.nodeValue = '\n            '+msgs[k]+'\n          ';
+    }, 4200);
+  }
+})();
+
+/* ============ 4. 鲸鱼娘的三句话 ============ */
+(function(){
+  const bubbles = [...document.querySelectorAll('.bubble')];
+  let i = 0;
+  function step(){
+    bubbles.forEach((b,idx)=> b.classList.toggle('show', idx===i));
+    i = (i+1) % bubbles.length;
+  }
+  step();
+  setInterval(step, 4600);
+})();
+</script>
+</body>
+</html>
